@@ -165,17 +165,33 @@ class Lock:
 # --- commands ---------------------------------------------------------------
 
 def cmd_has(args):
-    source = check_source(args.source)
-    date = check_date(args.date)
-    currency = check_currency(args.currency)
-    amount = check_amount(args.amount, currency)
+    if args.amount is not None and args.currency is None:
+        raise VaultError("--amount needs --currency")
+    wanted = {"source": check_source(args.source)}
+    if args.type is not None:
+        wanted["type"] = check_type(args.type)
+    if args.number is not None:
+        wanted["number"] = check_number(args.number)
+    dates = None
+    if args.date is not None:
+        day = datetime.date.fromisoformat(check_date(args.date))
+        if args.date_tolerance < 0:
+            raise VaultError("--date-tolerance must be 0 or more")
+        dates = {
+            (day + datetime.timedelta(days=n)).isoformat()
+            for n in range(-args.date_tolerance, args.date_tolerance + 1)
+        }
+    elif args.date_tolerance:
+        raise VaultError("--date-tolerance needs --date")
+    if args.currency is not None:
+        wanted["currency"] = check_currency(args.currency)
+    if args.amount is not None:
+        wanted["amount"] = check_amount(args.amount, args.currency)
     count = sum(
         1
         for d in read_ledger(vault_root())
-        if d.get("source") == source
-        and d.get("date") == date
-        and d.get("currency") == currency
-        and d.get("amount") == amount
+        if all(d.get(k) == v for k, v in wanted.items())
+        and (dates is None or d.get("date") in dates)
     )
     print(count)
     return 0
@@ -236,6 +252,10 @@ def place_file(src, folder, base, number):
 
     fd, tmp = tempfile.mkstemp(dir=folder, prefix=".saving-", suffix=".pdf")
     os.close(fd)
+    # mkstemp creates 0600; give the PDF the same mode as any new file.
+    umask = os.umask(0)
+    os.umask(umask)
+    os.chmod(tmp, 0o666 & ~umask)
     try:
         shutil.copyfile(src, tmp)
         with open(tmp, "rb") as f:
@@ -327,9 +347,13 @@ def parser():
 
     has = sub.add_parser("has", help="print how many matching documents are saved")
     has.add_argument("--source", required=True)
-    has.add_argument("--date", required=True)
-    has.add_argument("--currency", required=True)
-    has.add_argument("--amount", required=True)
+    has.add_argument("--type", choices=TYPES)
+    has.add_argument("--number")
+    has.add_argument("--date")
+    has.add_argument("--date-tolerance", type=int, default=0, metavar="DAYS",
+                     help="also match dates up to this many days before or after --date")
+    has.add_argument("--currency")
+    has.add_argument("--amount")
     has.set_defaults(func=cmd_has)
 
     latest = sub.add_parser("latest-download", help="print the newest matching PDF in the downloads folder")

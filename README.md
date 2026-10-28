@@ -4,7 +4,7 @@
 
 nowork-skills is a set of [Agent Skills](https://agentskills.io) for the small, recurring chores of running a business. Each skill is a plain folder with a `SKILL.md`, so it works in Claude and in any other agent that supports the open standard.
 
-The first skill fetches your Claude subscription receipts from claude.ai and files them into a plain folder on your machine.
+The first skill fetches your Claude subscription invoices and receipts from claude.ai and files them into a plain folder on your machine.
 
 ```
 > Get my Claude receipts.
@@ -25,7 +25,7 @@ The first skill fetches your Claude subscription receipts from claude.ai and fil
 | Skill | What it does |
 |---|---|
 | `receipt-vault` | Saves PDFs into the vault under standard names, keeps the ledger, skips duplicates |
-| `claude-ai` | Fetches Claude Pro / Max receipts from claude.ai |
+| `claude-ai` | Fetches Claude Pro / Max invoices and receipts from claude.ai |
 
 ## Repository layout
 
@@ -81,32 +81,32 @@ The agent never writes to the vault by hand. Every check and save goes through `
 
 | Command | What it does |
 |---|---|
-| `has --source --date --currency --amount` | Prints how many matching documents are saved |
+| `has --source [--type] [--number] [--date [--date-tolerance N]] [--currency --amount]` | Prints how many matching documents are saved |
 | `latest-download --pattern 'Receipt-*.pdf' [--max-age] [--wait]` | Prints the newest finished matching PDF in `~/Downloads` |
 | `save <pdf> --source --vendor --type --number --date --currency --amount` | Moves the PDF into `YYYY/MM/` under its standard name and appends one ledger line. Prints `duplicate:` and keeps the PDF if the number is already saved |
 | `list [--source] [--month YYYY-MM]` | Lists saved documents as JSON lines |
 
 ## claude-ai
 
-Covers Pro and Max plans bought on the web.
+Covers Pro and Max plans bought on the web. Each paid row on the billing page gives two documents from Stripe, and both are saved:
 
-| Field | Value |
-|---|---|
-| source | `claude-ai` |
-| vendor | `Anthropic` |
-| type | `Receipt` |
-| number | Receipt number on the PDF |
-| date | Date paid on the PDF |
-| amount | Amount paid on the PDF, tax included |
+| Field | Invoice | Receipt |
+|---|---|---|
+| type | `Invoice` | `Receipt` |
+| number | Invoice number on the PDF | Receipt number on the PDF |
+| date | Date of issue | Date paid |
+| amount | Total, tax included | Amount paid (Total minus any applied balance) |
+
+source is `claude-ai` and vendor is `Anthropic` for both.
 
 Flow:
 
-1. Open https://claude.ai/settings/billing
-2. Signed in when the page shows the current plan and an **Invoices** section. Otherwise hand the tab to the user to sign in
-3. Read the Invoices list as text: date, amount, status, **View**
-4. Skip rows already saved (`has`)
-5. For each new row: **View** → Stripe invoice page → **Download receipt** → `latest-download` → read the PDF and check it against the row → `save`
-6. Report how many were saved and how many were already there
+1. Open https://claude.ai/settings/billing (it opens as a Settings dialog)
+2. Signed in when the dialog shows the current plan and an **Invoices** table. Otherwise hand the tab to the user to sign in
+3. Read the table: date, total, status, Stripe link. Skip unpaid rows and credit notes (negative totals). List dates are local time and Stripe uses US time, so dates are compared within one day; the PDF date is what gets saved
+4. Skip rows whose invoice and receipt are both saved (`has`)
+5. For each new row: Stripe invoice page → **Download invoice** / **Download receipt** → `latest-download` → read each PDF and check it against the row and the page → `save`
+6. Report saved, already saved, skipped and mismatched rows
 
 ## Requirements
 
@@ -129,8 +129,8 @@ claude --chrome
 
 - [x] **M0** Repository: README, MIT license, `skills/` layout
 - [x] **M1** receipt-vault: `vault.py` (`has` / `save` / `latest-download` / `list`) and `document.schema.json`
-- [ ] **M2** claude-ai: one receipt end to end, from the billing page to the vault
-- [ ] **M3** A second run saves nothing new; a mismatch is reported, not saved
+- [x] **M2** claude-ai: one receipt end to end, from the billing page to the vault
+- [x] **M3** A second run saves nothing new; a mismatch is reported, not saved
 - [ ] **M4** Publish on GitHub
 
 After the MVP: more domains (platform.claude.com, github.com, vercel.com, …), a skill that drafts new domain skills from a live billing page, then 100 domains and Show HN.

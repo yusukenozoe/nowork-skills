@@ -144,6 +144,50 @@ class VaultTest(unittest.TestCase):
         r = self.run_vault("has", "--source", "claude-ai", "--date", "2026-10-01", "--currency", "USD", "--amount", "20.00")
         self.assertEqual(r.stdout.strip(), "2")
 
+    def test_has_filters_are_optional(self):
+        self.save(self.download("a.pdf", PDF + b"a"), number="INV-1", amount="220.00")
+        self.run_vault(
+            "save", self.download("b.pdf", PDF + b"b"), "--source", "claude-ai", "--vendor", "Anthropic",
+            "--type", "Invoice", "--number", "INV-2", "--date", "2026-10-01", "--currency", "USD", "--amount", "220.00",
+        )
+
+        def has(*args):
+            r = self.run_vault("has", "--source", "claude-ai", *args)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            return r.stdout.strip()
+
+        self.assertEqual(has("--date", "2026-10-01"), "2")
+        self.assertEqual(has("--type", "Receipt", "--date", "2026-10-01"), "1")
+        self.assertEqual(has("--type", "Invoice", "--date", "2026-10-01", "--currency", "USD", "--amount", "220.00"), "1")
+        self.assertEqual(has("--number", "INV-2"), "1")
+        self.assertEqual(has("--number", "INV-3"), "0")
+        self.assertEqual(self.run_vault("has", "--source", "claude-ai", "--amount", "220.00").returncode, 2)
+
+    def test_has_date_tolerance(self):
+        self.save(self.download("a.pdf"), date="2026-03-04", amount="200.00")
+
+        def has(*args):
+            r = self.run_vault("has", "--source", "claude-ai", "--currency", "USD", "--amount", "200.00", *args)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            return r.stdout.strip()
+
+        self.assertEqual(has("--date", "2026-03-05"), "0")
+        self.assertEqual(has("--date", "2026-03-05", "--date-tolerance", "1"), "1")
+        self.assertEqual(has("--date", "2026-03-03", "--date-tolerance", "1"), "1")
+        self.assertEqual(has("--date", "2026-03-06", "--date-tolerance", "1"), "0")
+        self.assertEqual(self.run_vault("has", "--source", "claude-ai", "--date-tolerance", "1").returncode, 2)
+
+    def test_saved_pdf_is_readable_by_others(self):
+        self.save(self.download("r.pdf"))
+        mode = os.stat(os.path.join(self.vault, self.ledger()[0]["file"])).st_mode & 0o777
+        self.assertEqual(mode, 0o666 & ~self.umask())
+
+    @staticmethod
+    def umask():
+        u = os.umask(0)
+        os.umask(u)
+        return u
+
     def test_list_filters_by_source_and_month(self):
         self.save(self.download("a.pdf", PDF + b"a"), number="1", date="2026-11-01")
         self.save(self.download("b.pdf", PDF + b"b"), number="2", date="2026-10-01")

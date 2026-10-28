@@ -17,7 +17,7 @@ Run with `python3 scripts/vault.py <command>` from this skill's folder.
 
 | Command | What it does |
 |---|---|
-| `has --source --date --currency --amount` | Prints how many matching documents are saved |
+| `has --source [--type] [--number] [--date [--date-tolerance N]] [--currency --amount]` | Prints how many matching documents are saved. Leave a filter out to match any value. `--date-tolerance 1` also matches the day before and after |
 | `latest-download --pattern 'Receipt-*.pdf' [--max-age 120] [--wait 30]` | Prints the newest finished matching PDF in `~/Downloads`. `--max-age` ignores older files, `--wait` keeps looking while the browser downloads |
 | `save <pdf> --source --vendor --type --number --date --currency --amount` | Moves the PDF into `YYYY/MM/` under its standard name and appends one ledger line. Prints `duplicate:` and leaves the PDF where it is if the number is already saved |
 | `list [--source] [--month YYYY-MM]` | Prints saved documents as JSON lines |
