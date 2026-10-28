@@ -126,7 +126,7 @@ claude --chrome
 
 ## Roadmap
 
-- [ ] **M0** Repository: README, MIT license, `skills/` layout
+- [x] **M0** Repository: README, MIT license, `skills/` layout
 - [ ] **M1** receipt-vault: `vault.py` (`has` / `save` / `latest-download` / `list`) and `document.schema.json`
 - [ ] **M2** claude-ai: one receipt end to end, from the billing page to the vault
 - [ ] **M3** A second run saves nothing new; a mismatch is reported, not saved
