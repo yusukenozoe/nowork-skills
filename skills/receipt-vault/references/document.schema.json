@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/yusukenozoe/nowork-skills/skills/receipt-vault/references/document.schema.json",
+  "title": "nowork vault document (v1)",
+  "description": "One line of .nowork/documents.jsonl. Written only by vault.py save.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "source", "vendor", "type", "number", "date", "currency", "amount", "file", "fetchedAt"],
+  "properties": {
+    "id": {
+      "description": "Duplicate key: <source>:<number>",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*:.+$"
+    },
+    "source": {
+      "description": "Domain skill that fetched the document, e.g. claude-ai",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+    },
+    "vendor": {
+      "description": "Short brand name, ASCII letters and digits only",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9]+$"
+    },
+    "type": {
+      "enum": ["Receipt", "Invoice"]
+    },
+    "number": {
+      "description": "Document number as printed on the PDF",
+      "type": "string",
+      "minLength": 1
+    },
+    "date": {
+      "description": "Date on the document",
+      "type": "string",
+      "format": "date",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "currency": {
+      "description": "ISO 4217 code",
+      "type": "string",
+      "pattern": "^[A-Z]{3}$"
+    },
+    "amount": {
+      "description": "Total including tax, in the currency's usual decimals. A string so decimals stay exact.",
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)(\\.\\d{2,3})?$"
+    },
+    "file": {
+      "description": "Path relative to the vault root",
+      "type": "string",
+      "pattern": "^\\d{4}/\\d{2}/[^/]+\\.pdf$"
+    },
+    "fetchedAt": {
+      "description": "When the document was saved, with UTC offset",
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

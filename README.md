@@ -40,6 +40,7 @@ nowork-skills/
    │  └─ references/document.schema.json
    └─ claude-ai/
       └─ SKILL.md
+└─ tests/test_vault.py              python3 -m unittest discover tests
 ```
 
 Domain skills describe only what is unique to one site. Everything about saving lives in `receipt-vault`.
@@ -81,9 +82,9 @@ The agent never writes to the vault by hand. Every check and save goes through `
 | Command | What it does |
 |---|---|
 | `has --source --date --currency --amount` | Prints how many matching documents are saved |
-| `latest-download --pattern 'Receipt-*.pdf'` | Prints the newest matching PDF in `~/Downloads` |
-| `save <pdf> --source --vendor --type --number --date --currency --amount` | Moves the PDF into `YYYY/MM/` under its standard name and appends one ledger line. Prints `duplicate:` if the number is already saved |
-| `list --source --month YYYY-MM` | Lists saved documents |
+| `latest-download --pattern 'Receipt-*.pdf' [--max-age] [--wait]` | Prints the newest finished matching PDF in `~/Downloads` |
+| `save <pdf> --source --vendor --type --number --date --currency --amount` | Moves the PDF into `YYYY/MM/` under its standard name and appends one ledger line. Prints `duplicate:` and keeps the PDF if the number is already saved |
+| `list [--source] [--month YYYY-MM]` | Lists saved documents as JSON lines |
 
 ## claude-ai
 
@@ -127,7 +128,7 @@ claude --chrome
 ## Roadmap
 
 - [x] **M0** Repository: README, MIT license, `skills/` layout
-- [ ] **M1** receipt-vault: `vault.py` (`has` / `save` / `latest-download` / `list`) and `document.schema.json`
+- [x] **M1** receipt-vault: `vault.py` (`has` / `save` / `latest-download` / `list`) and `document.schema.json`
 - [ ] **M2** claude-ai: one receipt end to end, from the billing page to the vault
 - [ ] **M3** A second run saves nothing new; a mismatch is reported, not saved
 - [ ] **M4** Publish on GitHub

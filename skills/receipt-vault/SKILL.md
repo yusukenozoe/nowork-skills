@@ -18,9 +18,13 @@ Run with `python3 scripts/vault.py <command>` from this skill's folder.
 | Command | What it does |
 |---|---|
 | `has --source --date --currency --amount` | Prints how many matching documents are saved |
-| `latest-download --pattern 'Receipt-*.pdf'` | Prints the newest matching PDF in `~/Downloads` |
-| `save <pdf> --source --vendor --type --number --date --currency --amount` | Moves the PDF into `YYYY/MM/` under its standard name and appends one ledger line. Prints `duplicate:` if the number is already saved |
-| `list --source --month YYYY-MM` | Lists saved documents |
+| `latest-download --pattern 'Receipt-*.pdf' [--max-age 120] [--wait 30]` | Prints the newest finished matching PDF in `~/Downloads`. `--max-age` ignores older files, `--wait` keeps looking while the browser downloads |
+| `save <pdf> --source --vendor --type --number --date --currency --amount` | Moves the PDF into `YYYY/MM/` under its standard name and appends one ledger line. Prints `duplicate:` and leaves the PDF where it is if the number is already saved |
+| `list [--source] [--month YYYY-MM]` | Prints saved documents as JSON lines |
+
+Exit codes: `0` ok, `1` nothing found (`latest-download`), `2` invalid input; the reason is printed after `error:`. Fix the value and retry; never work around it by writing to the vault yourself.
+
+After clicking a download link, use `latest-download --max-age 120 --wait 30` so an older receipt in `~/Downloads` is never picked up by mistake.
 
 ## Rules
 
